@@ -29,8 +29,8 @@ import lxml.html.soupparser
 nlp = spacy.load('en')
 
 # Mapping from number to sounds
-num_to_phones = {0: ['s', 'z'], 1: ['t', 'd', 'ð'], 2: ['n', 'ŋ'], 3: ['m'], 4: ['r'],
-                 5: ['l'], 6: ['ʤ', 'ʧ', 'ʃ', 'ʒ'], 7: ['k', 'g'], 8: ['f', 'v', 'θ'],
+num_to_phones = {0: ['s', 'z'], 1: ['t', 'd', 'ð', 'θ'], 2: ['n', 'ŋ'], 3: ['m'], 4: ['r'],
+                 5: ['l'], 6: ['ʤ', 'ʧ', 'ʃ', 'ʒ'], 7: ['k', 'g'], 8: ['f', 'v'],
                  9: ['p', 'b']}
 
 # Reverse mapping from sound to number
@@ -455,8 +455,7 @@ def save_wordlist(wordlist, filename):
         json.dump(wordlist, f)
 
 
-def interactive_create_wordlist():
-    filename = 'data/wordlist.json'
+def interactive_create_wordlist(filename='data/wordlist.json'):
     wordlist = load_wordlist(filename)
     numbers = [numseq_to_str(x)
                for x in itertools.chain(w for z in range(1, 3)
@@ -532,8 +531,8 @@ def interactive_leitner(filename='data/leitner.json', max_box=5):
     print()
 
 
-def add_wordlist_to_leitner():
-    wordlist = load_json_file_or_dict('data/wordlist.json')
+def add_wordlist_to_leitner(filename='data/wordlist.json'):
+    wordlist = load_json_file_or_dict(filename)
     for num, word in wordlist.items():
         leitner_add_fact(dict(front=num, back=word))
 
@@ -610,3 +609,14 @@ def train_memorizing(min_numseq_len=4, max_numseq_len=8):
         numseq_len = random.randint(min_numseq_len, max_numseq_len)
         numseq = [random.randint(0, 9) for _ in range(numseq_len)]
         interactive_memorize_numseq(numseq)
+
+
+def extract_persons(text):
+    """Extract all persons from text that occur more than once."""
+    persons = list()
+    for sent in nltk.tokenize.sent_tokenize(remove_double_quotation_marks(text)):
+        doc = nlp(sent)
+        for ent in doc.ents:
+            if ent.label_ == 'PERSON':
+                persons.append(ent.text)
+    return [x for x, ct in collections.Counter(persons).most_common() if ct > 1]
